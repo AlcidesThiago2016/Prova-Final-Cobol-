@@ -1,0 +1,248 @@
+      ******************************************************************
+      * Author: ALCIDES THIAGO
+      * Date: 18/11/2021
+      * Purpose:
+      * Tectonics: cobc
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. LERFOLHAPAG.
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+      *-----------------------------------------------------------------
+       CONFIGURATION SECTION.
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *-----------------------------------------------------------------
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+       SELECT ARQFUNCPAG ASSIGN TO DISK
+       ORGANIZATION IS LINE SEQUENTIAL
+       FILE STATUS IS FS-ARQFUNCPAG.
+
+       SELECT RELFOLHAPAG ASSIGN TO DISK
+       ORGANIZATION IS LINE SEQUENTIAL
+       FILE STATUS IS FS-RELFOLHAPAG.
+
+
+      ******************************************************************
+       DATA DIVISION.
+       FILE SECTION.
+       FD ARQFUNCPAG
+          LABEL RECORD STANDARD
+          VALUE OF FILE-ID IS 'ARQFUNCPAG.TXT'.
+       01 ARQ-IN-FUNC.
+          03 IN-MATRICULA     PIC 9(09).
+          03 IN-NOME          PIC X(30).
+          03 IN-DEP           PIC 9(01).
+          03 IN-SALARIO       PIC 9(09)V99.
+
+       FD RELFOLHAPAG
+          LABEL RECORD STANDARD
+          VALUE OF FILE-ID IS 'RELATORIOFUNCPAG.TXT'.
+       01 REL-OUT-FOLHA    PIC X(60).
+
+       WORKING-STORAGE SECTION.
+       77 FS-ARQFUNCPAG      PIC 9(02).
+       77 FS-RELFOLHAPAG     PIC 9(02) VALUES ZEROS.
+       77 SOMA-SALARIO       PIC 9(09)V99.
+       77 SOMA-QTD           PIC 9(04).
+       77 DATAHORASISTEMA    PIC X(14) VALUE SPACES.
+       77 SOMA-SALALMOX      PIC 9(09)V99.
+       77 SOMA-SALCOMPV      PIC 9(09)V99.
+       77 SOMA-SALFINAN      PIC 9(09)V99.
+       77 SOMA-SALSEGUN      PIC 9(09)V99.
+      *----------------------------------------------------------------*
+      *VARIAVEIS DO RELATORIO
+      *----------------------------------------------------------------*
+       77 PONTILHADO       PIC X(80) VALUE ALL '-'.
+       77 BRANCO           PIC X(80) VALUE ALL ' '.
+
+       01 CABDATA.
+          03 FILLER        PIC X(11) VALUE 'CURSO COBOL'.
+          03 FILLER        PIC X(03) VALUE ' - '.
+          03 FILLER        PIC X(06) VALUE 'DATA: '.
+          03 DIACAB        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(01) VALUE '/'.
+          03 MESCAB        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(01) VALUE '/'.
+          03 ANOCAB        PIC X(04) VALUE SPACES.
+          03 FILLER        PIC X(03) VALUE ' - '.
+          03 FILLER        PIC X(06) VALUE 'HORA: '.
+          03 HORCAB        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(01) VALUE ':'.
+          03 MINCAB        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(01) VALUE ':'.
+          03 SEGCAB        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(05) VALUE 'PAG: '.
+          03 CONT-PAG      PIC 9(03) VALUE ZEROS.
+
+       01 CAB1.
+          03 FILLER        PIC X(15) VALUE SPACES.
+          03 FILLER        PIC X(28) VALUE 'RELAÇÃO DE FUNCIONÁRIOS'.
+          03 FILLER        PIC X(12) VALUE SPACES.
+
+
+       01 CAB2.
+          03 FILLER        PIC X(11) VALUE 'MATRICULA'.
+          03 FILLER        PIC X(39) VALUE 'NOME FUNCIONARIO'.
+          03 FILLER        PIC X(14) VALUE 'SALARIO'.
+
+       01 LINHADET1.
+          03 DET-MATRICULA PIC 9(09) VALUE ZEROS.
+          03 FILLER        PIC X(02) VALUE SPACES.
+          03 DET-NOME      PIC X(30) VALUE SPACES.
+          03 FILLER        PIC X(06) VALUE SPACES.
+          03 FILLER        PIC X(02) VALUE 'R$'.
+          03 DET-SALARIO   PIC ZZ9.999,00.
+
+       01 RODAPEDESC.
+          03 FILLER        PIC X(40) VALUE '+TOTAL POR DEPARTAMENTO'.
+          03 FILLER        PIC X(10) VALUE 'QTD'.
+          03 FILLER        PIC X(14) VALUE 'SALARIO'.
+
+       01 RODAPEALMOX.
+          03 FILLER        PIC X(40) VALUE 'ALMOXARIFADO:'.
+          03 CONT-ALMOX    PIC 9(02).
+          03 FILLER        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(02) VALUE 'R$'.
+          03 SOMAALMOX-FMT PIC 9.999,99.
+
+       01 RODAPECOMPVEN.
+          03 FILLER        PIC X(40) VALUE 'COMPRA/VENDA:'.
+          03 CONT-COMP     PIC 9(02).
+          03 FILLER        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(02) VALUE 'R$'.
+          03 SOMACOMPV-FMT PIC 9.999,99.
+
+       01 RODAPEFINAN.
+          03 FILLER        PIC X(40) VALUE 'FINANCEIRO:'.
+          03 CONT-FINAN    PIC 9(02).
+          03 FILLER        PIC X(02) VALUE SPACES. 
+          03 FILLER        PIC X(02) VALUE 'R$'.
+          03 SOMAFINAN-FMT PIC 9.999,99.
+
+       01 RODAPESEGUN.
+          03 FILLER        PIC X(40) VALUE 'SEGURANÇA:'.
+          03 CONT-SEGUN    PIC 9(02).
+          03 FILLER        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(02) VALUE 'R$'.
+          03 SOMASEGUN-FMT PIC 9.999,99.
+
+       01 RODAPETOTAL.
+          03 FILLER             PIC X(40) VALUE 'TOTAL GERAL: '.
+          03 ROD-SOMA-QTD       PIC 9(02).
+          03 FILLER        PIC X(02) VALUE SPACES.
+          03 FILLER        PIC X(02) VALUE 'R$'.
+          03 ROD-SALARIO-SOMA   PIC 99.999,99.
+
+
+
+      ******************************************************************
+       PROCEDURE DIVISION.
+
+           OPEN INPUT ARQFUNCPAG
+           OPEN OUTPUT RELFOLHAPAG
+
+           PERFORM IMPRIMIR-CABECALHO
+
+           PERFORM UNTIL FS-ARQFUNCPAG = 10
+              READ ARQFUNCPAG
+                 NOT AT END
+                     DISPLAY ARQ-IN-FUNC
+                     PERFORM CARREGA-LISTA-FUNC
+                     ADD IN-SALARIO TO SOMA-SALARIO
+                     PERFORM CARREGA-RODAPE
+              END-READ
+              DISPLAY 'FILE ST: ' FS-ARQFUNCPAG
+           END-PERFORM
+
+           PERFORM IMPRIMIR-RODAPE
+
+           CLOSE ARQFUNCPAG
+           CLOSE RELFOLHAPAG
+
+           GOBACK.
+
+       IMPRIMIR-CABECALHO.
+           
+           ADD 1 TO CONT-PAG
+
+           MOVE FUNCTION CURRENT-DATE TO DATAHORASISTEMA
+
+           MOVE DATAHORASISTEMA(1:4)  TO ANOCAB
+           MOVE DATAHORASISTEMA(5:2)  TO MESCAB
+           MOVE DATAHORASISTEMA(7:2)  TO DIACAB
+
+           MOVE DATAHORASISTEMA(9:2)  TO HORCAB
+           MOVE DATAHORASISTEMA(11:2) TO MINCAB
+           MOVE DATAHORASISTEMA(13:2) TO SEGCAB
+
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+           WRITE REL-OUT-FOLHA FROM CABDATA
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+           WRITE REL-OUT-FOLHA FROM CAB1
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+           WRITE REL-OUT-FOLHA FROM CAB2
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+
+           EXIT.
+
+       CARREGA-LISTA-FUNC.
+
+               MOVE IN-MATRICULA  TO DET-MATRICULA
+               MOVE IN-NOME       TO DET-NOME
+               MOVE IN-SALARIO    TO DET-SALARIO
+               WRITE REL-OUT-FOLHA   FROM LINHADET1
+
+           EXIT.
+               
+       CARREGA-RODAPE.
+           
+           
+           
+               EVALUATE IN-DEP
+                   WHEN 1 
+                       ADD 1 TO CONT-ALMOX
+                       ADD IN-SALARIO TO SOMA-SALALMOX
+                       MOVE SOMA-SALALMOX TO SOMAALMOX-FMT
+                   WHEN 2
+                       ADD 1 TO CONT-COMP
+                       ADD IN-SALARIO TO SOMA-SALCOMPV
+                       MOVE SOMA-SALCOMPV TO SOMACOMPV-FMT
+                   WHEN 3
+                       ADD 1 TO CONT-FINAN
+                       ADD IN-SALARIO TO SOMA-SALFINAN
+                       MOVE SOMA-SALFINAN TO SOMAFINAN-FMT
+                   WHEN 4
+                       ADD 1 TO CONT-SEGUN
+                       ADD IN-SALARIO TO SOMA-SALSEGUN
+                       MOVE SOMA-SALSEGUN TO SOMASEGUN-FMT
+                   
+               END-EVALUATE
+               
+              COMPUTE SOMA-QTD = CONT-ALMOX + CONT-COMP + CONT-FINAN
+              + CONT-SEGUN
+              
+              MOVE SOMA-QTD TO ROD-SOMA-QTD
+           EXIT.
+               
+       IMPRIMIR-RODAPE.
+
+           MOVE SOMA-QTD       TO ROD-SOMA-QTD
+           MOVE SOMA-SALARIO   TO ROD-SALARIO-SOMA
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+           WRITE REL-OUT-FOLHA FROM RODAPEDESC
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+           WRITE REL-OUT-FOLHA FROM RODAPEALMOX
+           WRITE REL-OUT-FOLHA FROM RODAPECOMPVEN
+           WRITE REL-OUT-FOLHA FROM RODAPEFINAN
+           WRITE REL-OUT-FOLHA FROM RODAPESEGUN
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+           WRITE REL-OUT-FOLHA FROM RODAPETOTAL
+           WRITE REL-OUT-FOLHA FROM PONTILHADO
+
+           EXIT.
+
+       END PROGRAM LERFOLHAPAG.
